@@ -29,11 +29,11 @@ class ToggleBaseTraining(pl.Callback):
             for p in pl_module.model.base.parameters():
                 p.requires_grad = True
         print("-" * 100)
-        
+
 class SaveModelWeights(pl.Callback):
     def __init__(self, save_from_epoch=1):
         self.save_from_epoch =save_from_epoch
-        
+
     def on_validation_end(self, trainer, pl_module):
         os.makedirs("../models/", exist_ok=True)
         print("-" * 100)
@@ -44,7 +44,7 @@ class SaveModelWeights(pl.Callback):
             torch.save(pl_module.model.state_dict(), m_filepath)
             print(f"saved current model weights in file: {m_filepath}")
         print("-" * 100)
-        
+
 if __name__ == "__main__":
     pl.seed_everything(420)
 
@@ -85,6 +85,8 @@ if __name__ == "__main__":
     args.effective_batch_size = args.batch_size * args.accumulate_grad_batches
     args.log_every_n_steps = args.accumulate_grad_batches * 5
 
+    if not torch.cuda.is_available():
+        args.gpus = 0
     pl_model = SequenceClassicationLightningModule(args)
     data = BinaryClassificationDataModule(args)
 
@@ -103,6 +105,6 @@ if __name__ == "__main__":
     )
 
     print(
-        f"Training model_name={args.model_name} on fold={args.fold} for max_apochs={args.max_epochs} with and effective batch_size of effective_batch_size={args.effective_batch_size}"
+        f"Training model_name={args.model_name} for epochs={args.max_epochs} with an effective_batch_size={args.effective_batch_size}"
     )
     trainer.fit(pl_model, data)

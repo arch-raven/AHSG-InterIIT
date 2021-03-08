@@ -31,18 +31,18 @@ class SequenceClassicationLightningModule(pl.LightningModule):
 
         self.save_hyperparameters(args)
         self.model = MainModel(self.hparams)
-        
+
         self.train_accuracy = pl.metrics.classification.Accuracy()
         self.val_accuracy = pl.metrics.classification.Accuracy(compute_on_step=False)
-        self.train_f1 = pl.metrics.classification.F1()
-        self.val_f1 = pl.metrics.classification.F1(compute_on_step=False)
-        
+        self.train_f1 = pl.metrics.classification.F1(num_classes=1)
+        self.val_f1 = pl.metrics.classification.F1(num_classes=1,compute_on_step=False)
+
     @staticmethod
     def loss(logits, targets):
         return nn.BCEWithLogitsLoss()(logits, targets)
 
     def shared_step(self, batch):
-        ids_seq, attn_masks, token_type_ids, target = (
+        ids_seq, attn_masks, target = (
             batch["ids_seq"],
             batch["attn_masks"],
             batch["target"],
