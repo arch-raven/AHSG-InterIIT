@@ -12,11 +12,11 @@ from transformers import AdamW, get_cosine_schedule_with_warmup
 class MainModel(nn.Module):
     def __init__(self, args=None, **kwargs):
         super().__init__()
-        self.base = transformers.AutoModel.from_pretrained(args.model_name)
+        self.base = transformers.AutoModel.from_pretrained(args.base_path)
         self.dropout = nn.Dropout(0.3)
         self.linear = nn.Linear(768,1)
 
-    def forward(self, ids_seq, attn_masks, token_type_ids):
+    def forward(self, ids_seq, attn_masks, token_type_ids=None):
         base_out = self.base(
             ids_seq, attention_mask=attn_masks, token_type_ids=token_type_ids
         )
@@ -32,6 +32,11 @@ class SequenceClassicationLightningModule(pl.LightningModule):
         self.save_hyperparameters(args)
         self.model = MainModel(self.hparams)
         
+        self.train_accuracy = pl.metrics.classification.Accuracy()
+        self.val_accuracy = pl.metrics.classification.Accuracy(compute_on_step=False)
+        self.train_f1 = pl.metrics.classification.F1()
+        self.val_f1 = pl.metrics.classification.F1(compute_on_step=False)
+        
     @staticmethod
     def loss(logits, targets):
         return nn.BCEWithLogitsLoss()(logits, targets)
@@ -40,10 +45,9 @@ class SequenceClassicationLightningModule(pl.LightningModule):
         ids_seq, attn_masks, token_type_ids, target = (
             batch["ids_seq"],
             batch["attn_masks"],
-            batch["token_type_ids"],
             batch["target"],
         )
-        logits = self.model(ids_seq, attn_masks, token_type_ids)
+        logits = self.model(ids_seq, attn_masks)
         loss = self.loss(logits, target)
         return logits, loss
 
@@ -51,6 +55,14 @@ class SequenceClassicationLightningModule(pl.LightningModule):
         logits, loss = self.shared_step(batch)
         self.log(
             "train_loss", loss, on_step=True, on_epoch=True, prog_bar=False, logger=True
+        )
+        self.log(
+            "train_acc", self.train_accuracy(torch.sigmoid(logits), batch['target']),
+            on_step=True, on_epoch=True, prog_bar=False, logger=True
+        )
+        self.log(
+            "train_F1", self.train_f1(torch.sigmoid(logits), batch['target']),
+            on_step=True, on_epoch=True, prog_bar=False, logger=True
         )
         return loss
 
@@ -64,7 +76,15 @@ class SequenceClassicationLightningModule(pl.LightningModule):
             prog_bar=False,
             logger=True,
         )
-        return {"valid_loss": loss, "logits": logits, "true_preds": batch["target"]}
+        self.log(
+            "val_acc", self.val_accuracy(torch.sigmoid(logits), batch['target']),
+            on_step=False, on_epoch=True, prog_bar=False, logger=True
+        )
+        self.log(
+            "val_F1", self.val_f1(torch.sigmoid(logits), batch['target']),
+            on_step=False, on_epoch=True, prog_bar=False, logger=True
+        )
+        # return {"valid_loss": loss, "logits": logits, "true_preds": batch["target"]}
 
     def configure_optimizers(self):
         grouped_parameters = [
@@ -83,19 +103,19 @@ class SequenceClassicationLightningModule(pl.LightningModule):
         # return [optim], [sched]
         return optim
 
-    def validation_epoch_end(self, validation_step_outputs):
-        y_pred = (
-            torch.sigmoid(torch.cat([out["logits"] for out in validation_step_outputs]))
-            .to("cpu")
-            .detach()
-            .numpy()
-        )
-        y_true = (
-            torch.cat([out["true_preds"] for out in validation_step_outputs])
-            .to("cpu")
-            .detach()
-            .numpy()
-        )
+    # def validation_epoch_end(self, validation_step_outputs):
+    #     y_pred = (
+    #         torch.sigmoid(torch.cat([out["logits"] for out in validation_step_outputs]))
+    #         .to("cpu")
+    #         .detach()
+    #         .numpy()
+    #     )
+    #     y_true = (
+    #         torch.cat([out["true_preds"] for out in validation_step_outputs])
+    #         .to("cpu")
+    #         .detach()
+    #         .numpy()
+    #     )
 
 
 if __name__ == "__main__":

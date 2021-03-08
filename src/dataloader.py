@@ -18,7 +18,7 @@ class BinaryClassificationDataset(torch.utils.data.Dataset):
         self.main_text = main_text
         self.mobile_tech_label = mobile_tech_label
         
-        self.tokenizer = transformers.BertTokenizer.from_pretrained("bert-base-uncased")
+        self.tokenizer = transformers.AutoTokenizer.from_pretrained(args.base_path)
 
     def __len__(self):
         return len(self.mobile_tech_label)
@@ -38,7 +38,6 @@ class BinaryClassificationDataset(torch.utils.data.Dataset):
         return {
             "ids_seq": torch.tensor(inputs["input_ids"], dtype=torch.long),
             "attn_masks": torch.tensor(inputs["attention_mask"], dtype=torch.long),
-            "token_type_ids": torch.tensor(inputs["token_type_ids"], dtype=torch.long),
             "target": torch.tensor(mobile_tech_label, dtype=torch.float),
         }
         
@@ -96,7 +95,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=8)
     
     ##tokenizer and Language Model to use
-    parser.add_argument("--model_name", type=str, default="xlm-roberta-base")
+    parser.add_argument("--base_path", type=str, default="xlm-roberta-base")
     
     args = parser.parse_args()
     

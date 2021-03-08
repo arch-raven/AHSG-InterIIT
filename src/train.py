@@ -6,3 +6,103 @@ import pytorch_lightning as pl
 
 import wandb
 from pytorch_lightning.loggers import WandbLogger
+
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+
+from dataloader import BinaryClassificationDataModule
+from model import SequenceClassicationLightningModule
+
+class ToggleBaseTraining(pl.Callback):
+    def on_train_epoch_start(self, trainer, pl_module):
+        print("-" * 100)
+        print("ToggleBaseTraining Callback working.............")
+        if trainer.current_epoch == 0:
+            print(
+                f"current_epoch is: {trainer.current_epoch} and freezing BERT layer's parameters"
+            )
+            for p in pl_module.model.base.parameters():
+                p.requires_grad = False
+        else:
+            print(
+                f"current_epoch is: {trainer.current_epoch} and unfreezing BERT layer's parameters for training"
+            )
+            for p in pl_module.model.base.parameters():
+                p.requires_grad = True
+        print("-" * 100)
+        
+class SaveModelWeights(pl.Callback):
+    def __init__(self, save_from_epoch=1):
+        self.save_from_epoch =save_from_epoch
+        
+    def on_validation_end(self, trainer, pl_module):
+        os.makedirs("../models/", exist_ok=True)
+        print("-" * 100)
+        print("SaveModelWeight Callback working.............")
+        print(f"trainer.current_epoch: {trainer.current_epoch}")
+        if trainer.current_epoch >= self.save_from_epoch:
+            m_filepath = f"../models/{pl_module.hparams.model_name}-epoch-{trainer.current_epoch}.pt"
+            torch.save(pl_module.model.state_dict(), m_filepath)
+            print(f"saved current model weights in file: {m_filepath}")
+        print("-" * 100)
+        
+if __name__ == "__main__":
+    pl.seed_everything(420)
+
+    parser = ArgumentParser()
+
+    # trainer related arguments
+    parser.add_argument(
+        "--gpus",
+        default=1,
+        help="if value is 0 cpu will be used, if string then that gpu device will be used",
+    )
+    parser.add_argument("--checkpoint_callback", action="store_true")
+    parser.add_argument("--logger", action="store_true")
+    parser.add_argument("--max_epochs", default=5, type=int)
+    parser.add_argument("--progress_bar_refresh_rate", default=0, type=int)
+    parser.add_argument("--accumulate_grad_batches", default=2, type=int)
+    parser.add_argument("--model_name", default="ahsg", type=str)
+
+    # data related arguments
+    parser.add_argument("--batch_size", default=8, type=int)
+    parser.add_argument("--maxlen", default=512, type=int)
+
+    # model related arguments
+    parser.add_argument("--base_path", type=str, default="xlm-roberta-base")
+    parser.add_argument("--base_lr", default=1e-5, type=int)
+    parser.add_argument("--linear_lr", default=5e-3, type=int)
+    parser.add_argument("--base_dropout", default=0.3, type=float)
+    parser.add_argument(
+        "--bert_output_used",
+        default="maxpooled",
+        type=str,
+        choices=["maxpooled", "weighted_sum"],
+    )
+    parser.add_argument("--run_name", default=None)
+    # parser = pl.Trainer.add_argparse_args(parser)
+    args = parser.parse_args()
+
+    args.effective_batch_size = args.batch_size * args.accumulate_grad_batches
+    args.log_every_n_steps = args.accumulate_grad_batches * 5
+
+    pl_model = SequenceClassicationLightningModule(args)
+    data = BinaryClassificationDataModule(args)
+
+    if args.logger:
+        args.logger = WandbLogger(
+            project="ahsg", entity='professor',
+            name=args.run_name if (args.run_name is not None) else None,
+        )
+
+    trainer = pl.Trainer.from_argparse_args(
+        args,
+        callbacks=[
+            ToggleBaseTraining(),
+            SaveModelWeights(save_from_epoch=0),
+        ],
+    )
+
+    print(
+        f"Training model_name={args.model_name} on fold={args.fold} for max_apochs={args.max_epochs} with and effective batch_size of effective_batch_size={args.effective_batch_size}"
+    )
+    trainer.fit(pl_model, data)
