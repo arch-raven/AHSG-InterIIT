@@ -28,19 +28,19 @@ class ToggleBaseTraining(pl.Callback):
             for p in pl_module.model.base.parameters():
                 p.requires_grad = True
             print("-" * 100)
-        
+
 
 class SaveModelWeights(pl.Callback):
     def __init__(self, save_from_epoch=1):
         self.save_from_epoch =save_from_epoch
 
     def on_validation_end(self, trainer, pl_module):
-        os.makedirs("../models/", exist_ok=True)
+        os.makedirs("models/", exist_ok=True)
         print("-" * 100)
         print("SaveModelWeight Callback working.............")
         print(f"trainer.current_epoch: {trainer.current_epoch}")
         if trainer.current_epoch >= self.save_from_epoch:
-            m_filepath = f"../models/{pl_module.hparams.model_name}-epoch-{trainer.current_epoch}.pt"
+            m_filepath = f"models/{pl_module.hparams.model_name}-epoch-{trainer.current_epoch}.pt"
             torch.save(pl_module.model.state_dict(), m_filepath)
             print(f"saved current model weights in file: {m_filepath}")
         print("-" * 100)
@@ -87,7 +87,7 @@ if __name__ == "__main__":
 
     if not torch.cuda.is_available():
         args.gpus = 0
-    
+
     pl_model = SequenceClassicationLightningModule(args)
     data = BinaryClassificationDataModule(args)
 
