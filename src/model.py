@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import pandas as pd
+from sklearn import metrics
 import torch
 import torch.nn as nn
 import pytorch_lightning as pl
@@ -32,11 +33,6 @@ class SequenceClassicationLightningModule(pl.LightningModule):
         self.save_hyperparameters(args)
         self.model = MainModel(self.hparams)
 
-        self.train_accuracy = pl.metrics.classification.Accuracy()
-        self.val_accuracy = pl.metrics.classification.Accuracy(compute_on_step=False)
-        self.train_f1 = pl.metrics.classification.F1(num_classes=1)
-        self.val_f1 = pl.metrics.classification.F1(num_classes=1,compute_on_step=False)
-
     @staticmethod
     def loss(logits, targets):
         return nn.BCEWithLogitsLoss()(logits, targets)
@@ -47,7 +43,7 @@ class SequenceClassicationLightningModule(pl.LightningModule):
             batch["attn_masks"],
             batch["target"],
         )
-        logits = self.model(ids_seq, attn_masks)
+        logits = self.model(ids_seq, attn_masks).squeeze()
         loss = self.loss(logits, target)
         return logits, loss
 
@@ -56,35 +52,14 @@ class SequenceClassicationLightningModule(pl.LightningModule):
         self.log(
             "train_loss", loss, on_step=True, on_epoch=True, prog_bar=False, logger=True
         )
-        self.log(
-            "train_acc", self.train_accuracy(torch.sigmoid(logits), batch['target']),
-            on_step=True, on_epoch=True, prog_bar=False, logger=True
-        )
-        self.log(
-            "train_F1", self.train_f1(torch.sigmoid(logits), batch['target']),
-            on_step=True, on_epoch=True, prog_bar=False, logger=True
-        )
-        return loss
+        return {"loss": loss, "logits": logits, "true_preds": batch["target"]}
 
     def validation_step(self, batch, batch_idx):
         logits, loss = self.shared_step(batch)
         self.log(
-            "valid_loss",
-            loss,
-            on_step=False,
-            on_epoch=True,
-            prog_bar=False,
-            logger=True,
+            "valid_loss", loss, on_step=False, on_epoch=True, prog_bar=False, logger=True,
         )
-        self.log(
-            "val_acc", self.val_accuracy(torch.sigmoid(logits), batch['target']),
-            on_step=False, on_epoch=True, prog_bar=False, logger=True
-        )
-        self.log(
-            "val_F1", self.val_f1(torch.sigmoid(logits), batch['target']),
-            on_step=False, on_epoch=True, prog_bar=False, logger=True
-        )
-        # return {"valid_loss": loss, "logits": logits, "true_preds": batch["target"]}
+        return {"logits": logits, "true_preds": batch["target"]}
 
     def configure_optimizers(self):
         grouped_parameters = [
@@ -92,30 +67,27 @@ class SequenceClassicationLightningModule(pl.LightningModule):
             {"params": self.model.linear.parameters(), "lr": self.hparams.linear_lr},
         ]
         optim = AdamW(grouped_parameters, lr=self.hparams.base_lr)
-
-        # num_training_steps = (
-        #     4863 // (self.hparams.batch_size * self.hparams.accumulate_grad_batches)
-        # ) * self.hparams.max_epochs
-        # sched = get_cosine_schedule_with_warmup(
-        #     optim, num_warmup_steps=0, num_training_steps=num_training_steps
-        # )
-
-        # return [optim], [sched]
         return optim
-
-    # def validation_epoch_end(self, validation_step_outputs):
-    #     y_pred = (
-    #         torch.sigmoid(torch.cat([out["logits"] for out in validation_step_outputs]))
-    #         .to("cpu")
-    #         .detach()
-    #         .numpy()
-    #     )
-    #     y_true = (
-    #         torch.cat([out["true_preds"] for out in validation_step_outputs])
-    #         .to("cpu")
-    #         .detach()
-    #         .numpy()
-    #     )
+    
+    def training_epoch_end(self, training_step_outputs):
+        y_pred = torch.sigmoid(torch.cat([out["logits"] for out in training_step_outputs])).to("cpu").detach().numpy() >= 0.5
+        y_true = torch.cat([out["true_preds"] for out in training_step_outputs]).to("cpu", dtype=int).detach().numpy()
+        
+        acc = metrics.accuracy_score(y_pred, y_true)
+        f1 = metrics.f1_score(y_pred, y_true)
+        
+        self.log("train_acc", acc)
+        self.log("train_f1", f1)
+    
+    def validation_epoch_end(self, validation_step_outputs):
+        y_pred = torch.sigmoid(torch.cat([out["logits"] for out in validation_step_outputs])).to("cpu").detach().numpy() >= 0.5
+        y_true = torch.cat([out["true_preds"] for out in validation_step_outputs]).to("cpu", dtype=int).detach().numpy()
+        
+        acc = metrics.accuracy_score(y_pred, y_true)
+        f1 = metrics.f1_score(y_pred, y_true)
+        
+        self.log("val_acc", acc)
+        self.log("val_f1", f1)
 
 
 if __name__ == "__main__":

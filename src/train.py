@@ -14,21 +14,21 @@ from model import SequenceClassicationLightningModule
 
 class ToggleBaseTraining(pl.Callback):
     def on_train_epoch_start(self, trainer, pl_module):
-        print("-" * 100)
-        print("ToggleBaseTraining Callback working.............")
         if trainer.current_epoch == 0:
-            print(
-                f"current_epoch is: {trainer.current_epoch} and freezing BERT layer's parameters"
-            )
+            print("-" * 100)
+            print("ToggleBaseTraining Callback working.............")
+            print(f"current_epoch is: {trainer.current_epoch} and freezing BERT layer's parameters")
             for p in pl_module.model.base.parameters():
                 p.requires_grad = False
-        else:
-            print(
-                f"current_epoch is: {trainer.current_epoch} and unfreezing BERT layer's parameters for training"
-            )
+            print("-" * 100)
+        elif trainer.current_epoch == 1:
+            print("-" * 100)
+            print("ToggleBaseTraining Callback working.............")
+            print(f"current_epoch is: {trainer.current_epoch} and unfreezing BERT layer's parameters for training")
             for p in pl_module.model.base.parameters():
                 p.requires_grad = True
-        print("-" * 100)
+            print("-" * 100)
+        
 
 class SaveModelWeights(pl.Callback):
     def __init__(self, save_from_epoch=1):
@@ -60,7 +60,7 @@ if __name__ == "__main__":
     parser.add_argument("--logger", action="store_true")
     parser.add_argument("--max_epochs", default=5, type=int)
     parser.add_argument("--progress_bar_refresh_rate", default=0, type=int)
-    parser.add_argument("--accumulate_grad_batches", default=2, type=int)
+    parser.add_argument("--accumulate_grad_batches", default=1, type=int)
     parser.add_argument("--model_name", default="ahsg", type=str)
 
     # data related arguments
@@ -87,6 +87,7 @@ if __name__ == "__main__":
 
     if not torch.cuda.is_available():
         args.gpus = 0
+    
     pl_model = SequenceClassicationLightningModule(args)
     data = BinaryClassificationDataModule(args)
 
@@ -100,7 +101,7 @@ if __name__ == "__main__":
         args,
         callbacks=[
             ToggleBaseTraining(),
-            SaveModelWeights(save_from_epoch=0),
+            SaveModelWeights(save_from_epoch=1),
         ],
     )
 
