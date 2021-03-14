@@ -90,5 +90,86 @@ class SequenceClassicationLightningModule(pl.LightningModule):
         self.log("val_f1", f1)
 
 
+class LightningModuleForTokenClassification(pl.LightningModule):
+    def __init__(self, args, **kwargs):
+        super().__init__()
+
+        self.save_hyperparameters(args)
+        self.model = transformers.AutoModelForTokenClassification.from_pretrained(self.hparams.base_path, num_labels=2)
+
+    def training_step(self, batch, batch_idx):
+        output = self.model(**batch)
+        self.log(
+            "train_loss", output['loss'].item(), on_step=True, on_epoch=True, prog_bar=True, logger=True
+        )
+        return {"loss": output['loss'], "logits": output['logits'], "true_preds": batch["labels"]}
+
+    def validation_step(self, batch, batch_idx):
+        output = self.model(**batch)
+        self.log(
+            "valid_loss", output['loss'].item(), on_step=False, on_epoch=True, prog_bar=True, logger=True,
+        )
+        return {"logits": output['logits'], "true_preds": batch["labels"]}
+    
+    def test_step(self, batch, batch_idx):
+        output = self.model(**batch)
+        self.log(
+            "test_loss", output['loss'].item(), on_step=False, on_epoch=True, prog_bar=True, logger=True,
+        )
+        return {"logits": output['logits'], "true_preds": batch["labels"]}
+
+    def configure_optimizers(self):
+        params = list(self.model.named_parameters())
+        
+        def is_backbone(n): return 'classifier' not in n
+        
+        grouped_parameters = [
+            {"params": [p for n,p in params if is_backbone(n)], "lr": self.hparams.base_lr},
+            {"params": [p for n,p in params if not is_backbone(n)], "lr": self.hparams.linear_lr},
+        ]
+        optim = AdamW(grouped_parameters, lr=self.hparams.base_lr)
+        return optim
+    
+    def training_epoch_end(self, training_step_outputs):
+        
+        y_pred = torch.cat([torch.argmax(out["logits"], dim=-1).view(-1) for out in training_step_outputs]).to("cpu").detach().numpy().reshape(-1)
+        y_true = torch.cat([out["true_preds"].view(-1) for out in training_step_outputs]).to("cpu", dtype=int).detach().numpy().reshape(-1)
+        
+        mask = y_true != -100
+        y_true = y_true[mask]
+        y_pred = y_pred[mask]
+        
+        acc = metrics.accuracy_score(y_true, y_pred)
+        f1 = metrics.f1_score(y_true, y_pred, average="weighted")
+        
+        self.log("train_acc", acc)
+        self.log("train_f1", f1)
+    
+    def validation_epoch_end(self, validation_step_outputs):
+
+        y_pred = torch.cat([torch.argmax(out["logits"], dim=-1).view(-1) for out in validation_step_outputs]).to("cpu").detach().numpy().reshape(-1)
+        y_true = torch.cat([out["true_preds"].view(-1) for out in validation_step_outputs]).to("cpu", dtype=int).detach().numpy().reshape(-1)
+
+        mask = y_true != -100
+
+        acc = metrics.accuracy_score(y_true, y_pred)
+        f1 = metrics.f1_score(y_true, y_pred, average="weighted")
+
+        self.log("val_acc", acc)
+        self.log("val_f1", f1)
+    
+    def test_epoch_end(self, test_step_outputs):
+
+        y_pred = torch.cat([torch.argmax(out["logits"], dim=-1).view(-1) for out in test_step_outputs]).to("cpu").detach().numpy().reshape(-1)
+        y_true = torch.cat([out["true_preds"].view(-1) for out in test_step_outputs]).to("cpu", dtype=int).detach().numpy().reshape(-1)
+
+        mask = y_true != -100
+
+        acc = metrics.accuracy_score(y_true, y_pred)
+        f1 = metrics.f1_score(y_true, y_pred, average="weighted")
+
+        self.log("test_acc", acc)
+        self.log("test_f1", f1)        
+        
 if __name__ == "__main__":
     pass
