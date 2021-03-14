@@ -8,6 +8,7 @@ Automated Headline and Sentiment Generator for Inter IIT tech meet 2021
 4. [Data folder](https://drive.google.com/drive/folders/1XMxbp0zFawmSGy0P_NKRSo3R5rC1qK4c?usp=sharing)
 5. [Orignal and cleaned data in .pkl form (Use pd.read_pickle)](https://drive.google.com/drive/folders/1HgsfTcG-0uuxb8HOujyL5CrMFIiFrBjf?usp=sharing)
 6. [External and custom datasets](https://drive.google.com/drive/u/1/folders/1pB028xxJml-ivJoWWFweY_i96DLwVs8n)
+7. [Link to article dataset translated in English( for Pegasus)](https://drive.google.com/file/d/1vjdAXXYDRecAkFork-HWh3rUkrimI4jR/view?usp=sharing)
 ### To-Do List
 
 - [ ] Data Preprocessing
