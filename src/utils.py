@@ -5,6 +5,7 @@ pip install spacy
 pip install spacy-langdetect
 python -m spacy download en_core_web_sm
 pip install google_trans_new
+pip install tqdm
 """
 
 import spacy
@@ -14,6 +15,7 @@ nlp.add_pipe(LanguageDetector(), name='language_detector', last=True)
 from google_trans_new import google_translator
 import time
 import random 
+from tqdm import tqdm
 
 def detect_lang(texts, truncate=True):
   """
@@ -70,7 +72,7 @@ def translate(texts):
     
     translated_texts = []
     #try:
-    for batches in text_batches:
+    for batches in tqdm(text_batches):
         translated_batches = []
         for batch in batches:
             interval = (((random.random()+1)*100)//1)/100
