@@ -14,10 +14,10 @@ from model import LightningModuleForAutoModels
 
 class ToggleBaseTraining(pl.Callback):
     def on_train_epoch_start(self, trainer, pl_module):
-        
+
         params = list(pl_module.model.named_parameters())
         def is_backbone(n): return 'classifier' not in n
-        
+
         if trainer.current_epoch == 0:
             print("-" * 100)
             print("ToggleBaseTraining Callback working.............")
@@ -37,6 +37,7 @@ class ToggleBaseTraining(pl.Callback):
 class SaveModelWeights(pl.Callback):
     def __init__(self, save_from_epoch=1):
         self.save_from_epoch =save_from_epoch
+        self.call_num = 0
 
     def on_validation_end(self, trainer, pl_module):
         os.makedirs("models/", exist_ok=True)
@@ -44,10 +45,14 @@ class SaveModelWeights(pl.Callback):
         print("SaveModelWeight Callback working.............")
         print(f"trainer.current_epoch: {trainer.current_epoch}")
         if trainer.current_epoch >= self.save_from_epoch:
-            m_filepath = f"models/{pl_module.hparams.model_name}-epoch-{trainer.current_epoch}.pt"
+            m_filepath = f"models/{pl_module.hparams.model_name}-epoch-{trainer.current_epoch}-{self.call_num}"
+            while os.path.exists(m_filepath+".pt"):
+                m_filepath += "1"
+            m_filepath += ".pt"
             torch.save(pl_module.model.state_dict(), m_filepath)
             print(f"saved current model weights in file: {m_filepath}")
         print("-" * 100)
+        self.call_num += 1
 
 
 if __name__ == "__main__":
@@ -56,13 +61,16 @@ if __name__ == "__main__":
     parser = ArgumentParser()
 
     # trainer related arguments
-    parser.add_argument("--gpus", default="1", type="str")
+    parser.add_argument("--gpus", default=1)
     parser.add_argument("--checkpoint_callback", action="store_true")
     parser.add_argument("--logger", action="store_true")
     parser.add_argument("--max_epochs", default=5, type=int)
     parser.add_argument("--progress_bar_refresh_rate", default=0, type=int)
     parser.add_argument("--accumulate_grad_batches", default=1, type=int)
     parser.add_argument("--model_name", default="ahsg", type=str)
+    parser.add_argument("--fast_dev_run", action="store_true")
+    parser.add_argument("--val_check_interval", default=0.95, type=float)
+
 
     # data related arguments
     parser.add_argument("--filepath", type=str, default=None)
@@ -71,15 +79,10 @@ if __name__ == "__main__":
 
     # model related arguments
     parser.add_argument("--base_path", type=str, default="xlm-roberta-base")
-    parser.add_argument("--base_lr", default=1e-5, type=int)
-    parser.add_argument("--linear_lr", default=5e-3, type=int)
+    parser.add_argument("--base_lr", default=1e-5, type=float)
+    parser.add_argument("--linear_lr", default=5e-3, type=float)
     parser.add_argument("--num_labels", default=1, type=int)
-    parser.add_argument(
-        "--bert_output_used",
-        default="maxpooled",
-        type=str,
-        choices=["maxpooled", "weighted_sum"],
-    )
+    parser.add_argument("--bert_output_used", default="maxpooled", type=str,)
     parser.add_argument("--run_name", default=None)
     # parser = pl.Trainer.add_argparse_args(parser)
     args = parser.parse_args()
@@ -89,6 +92,7 @@ if __name__ == "__main__":
 
     if not torch.cuda.is_available():
         args.gpus = 0
+    else: args.gpus = str(args.gpus)
 
     pl_model = LightningModuleForAutoModels(args)
     data = DataModuleForTextPairClassification(args)
