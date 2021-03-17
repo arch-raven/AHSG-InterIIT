@@ -26,7 +26,7 @@ def detect_lang(texts, truncate=True):
   """
   langs = []
   probs = []
-  for text in texts:
+  for text in tqdm(texts):
       if truncate:
           text = text[:1000]
       processed = nlp(text)
@@ -71,19 +71,16 @@ def translate(texts):
         text_batches.append(batches)
     
     translated_texts = []
-    #try:
-    for batches in tqdm(text_batches):
-        translated_batches = []
-        for batch in batches:
-            interval = (((random.random()+1)*100)//1)/100
-            time.sleep(interval) 
-            translator = google_translator(timeout=5)
-            translated_batch = _translate_text(batch, translator)
-            translated_batches.append(translated_batch)
-        translated_texts.append(' '.join(translated_batches))
-
-    # except:
-    #     return translated_texts, len(translated_texts)
+    try:
+      for batches in tqdm(text_batches):
+          translated_batches = []
+          for batch in batches:
+              interval = (((random.random()+1)*100)//1)/100
+              time.sleep(interval) 
+              translator = google_translator(timeout=5)
+              translated_batch = _translate_text(batch, translator)
+              translated_batches.append(translated_batch)
+          translated_texts.append(' '.join(translated_batches))
+    except:
+        return translated_texts, len(translated_texts)
     return translated_texts, len(translated_texts)
-
-    
