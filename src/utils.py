@@ -11,11 +11,14 @@ pip install tqdm
 import spacy
 nlp = spacy.load('en_core_web_sm')
 from spacy_langdetect import LanguageDetector
+from langdetect import DetectorFactory
+DetectorFactory.seed = 5
 nlp.add_pipe(LanguageDetector(), name='language_detector', last=True)
 from google_trans_new import google_translator
 import time
 import random 
-from tqdm import tqdm
+from tqdm.auto import tqdm
+import detect_script
 
 def detect_lang(texts, truncate=True):
   """
@@ -25,14 +28,17 @@ def detect_lang(texts, truncate=True):
   langs: the language of each text
   """
   langs = []
-  probs = []
   for text in tqdm(texts):
       if truncate:
           text = text[:1000]
       processed = nlp(text)
       lang = processed._.language['language']
-      if lang!='en':
-          lang = 'hi'
+      prob = processed._.language['score']
+      #print(lang,prob)
+      if (lang!='en' and lang!='hi') or (lang=='en' and prob<0.9 and detect_script.detect(text)!='Devanagari'):
+        lang = 'hing'
+      elif (lang=='en' and detect_script.detect(text)=='Devanagari'):
+        lang = 'hi'
       langs.append(lang)
   return langs
 
