@@ -42,38 +42,43 @@ def detect_lang(texts, truncate=True):
       langs.append(lang)
   return langs
 
-def _split_in_batches(article):  
+def _split_in_batches(article,max_len=5000):  
   """
   Implicit function to split text into batches of 5000 chars for TTS API
   """  
   batches = []
-  while(len(article)>5000):
-    fstop_ind = article[:5000].rfind('.')
+  while(len(article)>max_len):
+    fstop_ind = article[:max_len].rfind('.')
     if(fstop_ind<0):
-      fstop_ind = 5000-1
+      fstop_ind = max_len-1
     batches.append(article[:fstop_ind+1])
     article = article[fstop_ind+1:]
   batches.append(article)
   return batches
 
 def _translate_text(article, translator):
-  translated_text = translator.translate(article,lang_tgt='en') 
+  translated_text = translator.translate(article,lang_src='hi',lang_tgt='en') 
   return translated_text
 
 
 
-def translate(texts):
+def translate(texts,hinglish=False):
     """
     !! This function will take considerable time ~ [1.5 sec X len(texts)] !!
     Input:
     texts: a list or numpy array of strings
+    hinglish: boolean flag. set to True if you are translating hinglish (Google API)
+              only supports 160 chars of hinglish
     Output:
     translated_texts: Translated to english
     num_trans: no of sentences translated successfully
     """
     text_batches = [] # List of lists
     for text in texts:
-        batches = _split_in_batches(text)
+        if hinglish == True:
+          batches = _split_in_batches(text,max_len=160)
+        else:
+          batches = _split_in_batches(text,max_len=5000)
         text_batches.append(batches)
     
     translated_texts = []
