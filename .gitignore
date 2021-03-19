@@ -5,3 +5,7 @@ wandb/
 notebooks/*.pkl
 models/
 wandb/
+src/_test*
+src/*.pkl
+src/__pycache__
+src/*.csv
