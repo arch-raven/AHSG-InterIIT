@@ -87,17 +87,17 @@ class DatasetForTextPairClassification(torch.utils.data.Dataset):
         args,
         texts,
         brand_names,
-        sentiments,
+        sentiments=None,
     ):
         self.hparams = args
         self.texts = texts
         self.brand_names = brand_names
-        self.sentiments = sentiments
+        self.sentiments = sentiments if sentiments else [0]*len(texts)
 
         self.tokenizer = transformers.AutoTokenizer.from_pretrained(args.base_path)
 
     def __len__(self):
-        return len(self.sentiments)
+        return len(self.texts)
 
     def __getitem__(self, idx):
         # print("idx: ", idx)
@@ -151,14 +151,14 @@ class DataModuleForTextPairClassification(pl.LightningDataModule):
         return SimpleBatchDataLoader(ds, shuffle=True, drop_last=True, batch_size=self.hparams.batch_size)
 
     def val_dataloader(self):
-        ds1 = DatasetForTextPairClassification(self.hparams, self.train_df.texts.to_list(), self.train_df.brand_names.to_list(),self.train_df.sentiments.to_list())
+        ds1 = DatasetForTextPairClassification(self.hparams, self.val_df.texts.to_list(), self.val_df.brand_names.to_list(),self.val_df.sentiments.to_list())
         dl1 = SimpleBatchDataLoader(ds1, shuffle=False, drop_last=False, batch_size=self.hparams.batch_size*2)
         # ds2 = DatasetForTextPairClassification(self.hparams, self.train_df.texts.to_list(), self.train_df.brand_names.to_list(),self.train_df.sentiments.to_list())
         # dl2 = SimpleBatchDataLoader(ds2, shuffle=False, drop_last=False, batch_size=self.hparams.batch_size*2)
         return dl1
 
     def test_dataloader(self):
-        ds = DatasetForTextPairClassification(self.hparams, self.train_df.texts.to_list(), self.train_df.brand_names.to_list(),self.train_df.sentiments.to_list())
+        ds = DatasetForTextPairClassification(self.hparams, self.test_df.texts.to_list(), self.test_df.brand_names.to_list(),self.test_df.sentiments.to_list())
         return SimpleBatchDataLoader(ds, shuffle=False, drop_last=False, batch_size=self.hparams.batch_size)
 
 

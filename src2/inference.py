@@ -7,38 +7,30 @@ from sklearn import metrics
 import torch
 import pytorch_lightning as pl
 
-from model import MainModel
-from dataloader import BinaryClassificationDataset
+from dataloader import DatasetForTextPairClassification, SimpleBatchDataLoader, DataModuleForTextPairClassification
+from model import LightningModuleForAutoModels
 
-def predict(args, dataframe, model):
+def predict(args, dataframe, model, true_labels=False):
 
-    ds = BinaryClassificationDataset(args, dataframe.Text.to_list(), dataframe.Mobile_Tech_Flag.to_list())
-    dl = torch.utils.data.DataLoader(
-        ds,
-        batch_size=args.batch_size,
-        shuffle=False,
-        num_workers=8,
-        drop_last=False,
-    )
+    ds = DatasetForTextPairClassification(args, dataframe.texts.to_list(), dataframe.brand_names.to_list())
+    dl = SimpleBatchDataLoader(dataset=ds, shuffle=False, drop_last=False, batch_size=args.batch_size)
 
     ypreds = []
     ytrue = []
 
     for batch in dl:
-        ids_seq, attn_masks, target = (
-            batch["ids_seq"].to(args.device),
-            batch["attn_masks"].to(args.device),
-            batch["target"],
-        )
+        # batch['labels'] =None  
         with torch.no_grad():
-            logits = model(ids_seq, attn_masks).squeeze()
-        ypreds.append(logits)
-        ytrue.append(batch['target'])
+            outs = model(**batch)
+        ypreds.append(outs["logits"])
+        ytrue.append(batch['labels'])
 
-    y_pred = torch.sigmoid(torch.cat(ypreds)).to("cpu").detach().numpy()
+    y_pred = torch.softmax(torch.cat(ypreds), dim=-1).to("cpu").detach().numpy()
     y_true = torch.cat(ytrue).to("cpu", dtype=int).detach().numpy()
 
-    return pd.DataFrame({"y_pred":y_pred, "y_true":y_true})
+    df = pd.DataFrame(y_pred)
+    df["y_true"] = y_true 
+    return df
 
 
 if __name__ == "__main__":
@@ -48,11 +40,30 @@ if __name__ == "__main__":
 
     parser.add_argument("path_to_ckpt", type=str, help="path to checkpoint file")
 
+    # trainer related arguments
+    parser.add_argument("--gpus", default=1)
+    parser.add_argument("--checkpoint_callback", action="store_true")
+    parser.add_argument("--logger", action="store_true")
+    parser.add_argument("--max_epochs", default=5, type=int)
+    parser.add_argument("--progress_bar_refresh_rate", default=0, type=int)
+    parser.add_argument("--accumulate_grad_batches", default=1, type=int)
+    parser.add_argument("--model_name", default="ahsg", type=str)
+    parser.add_argument("--fast_dev_run", action="store_true")
+    parser.add_argument("--val_check_interval", default=0.95, type=float)
+
+
     # data related arguments
-    parser.add_argument("--gpus", type=int, default=1)
+    parser.add_argument("--filepath", type=str, default=None)
     parser.add_argument("--batch_size", default=8, type=int)
     parser.add_argument("--maxlen", default=512, type=int)
+
+    # model related arguments
     parser.add_argument("--base_path", type=str, default="xlm-roberta-base")
+    parser.add_argument("--base_lr", default=1e-5, type=float)
+    parser.add_argument("--linear_lr", default=5e-3, type=float)
+    parser.add_argument("--num_labels", default=1, type=int)
+    parser.add_argument("--bert_output_used", default="maxpooled", type=str,)
+    parser.add_argument("--run_name", default=None)
 
     # outputs prediction specific arguments
     parser.add_argument("--threshold", type=float, default=0.5)
@@ -60,19 +71,12 @@ if __name__ == "__main__":
 
     args.device = torch.device(f"cuda:{args.gpus}" if torch.cuda.is_available() else "cpu")
 
-    model = MainModel(args)
+    model = LightningModuleForAutoModels(args)
     model.load_state_dict(torch.load(f"models/{args.path_to_ckpt}"))
     model.to(args.device)
     model.eval()
 
-    article = pd.read_pickle("data/article_dev_cleaned.pkl")
-    tweet = pd.read_pickle("data/tweet_dev_cleaned.pkl")
-
-    article = article.loc[:,["Text", "Mobile_Tech_Flag"]]
-    tweet = tweet.loc[:,["Tweet_with_emoji_desc", "Mobile_Tech_Tag"]].rename(columns={"Tweet_with_emoji_desc":"Text", "Mobile_Tech_Tag":"Mobile_Tech_Flag"})
-
-    tweet_outs = predict(args, tweet, model)
-    article_outs = predict(args, article, model)
+    data = DataModuleForTextPairClassification(args)
 
     os.makedirs("outputs", exist_ok=True)
     tweet_outs.to_csv(f"outputs/tweet_{args.path_to_ckpt}", index=False)

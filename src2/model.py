@@ -179,6 +179,11 @@ class LightningModuleForAutoModels(pl.LightningModule):
         self.save_hyperparameters(args)
         self.model = transformers.AutoModelForSequenceClassification.from_pretrained(self.hparams.base_path, num_labels=self.hparams.num_labels)
 
+    @staticmethod
+    def loss_fn(logits, targets):
+        ce = torch.nn.CrossEntropyLoss(weight=torch.tensor([0.30,1.,0.10]))
+        return ce(logits, targets)
+    
     def training_step(self, batch, batch_idx):
         output = self.model(**batch)
         self.log(
