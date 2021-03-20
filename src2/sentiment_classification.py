@@ -83,19 +83,15 @@ class DataModuleForTextPairClassification(pl.LightningDataModule):
         super().__init__()
         self.hparams = args
 
-        self.filepath = args.filepath if args.filepath else "data/dual_product_reviews_formatted.csv"
+        self.filepath = args.filepath if args.filepath else "data/combined_pairs_formatted.tsv"
 
     def prepare_data(self):
-        df = pd.read_csv(self.filepath)
-        mask = df["brand_names"].isin(['ASUS', 'OnePlus'])
-
-        test_df = df.loc[mask]
-        df = df.loc[~mask]
-
-        val_df = df.sample(frac=0.1)
-        train_df = df.loc[~df.index.isin(val_df.index.values),:]
-        train_df = train_df.sample(frac=1)
-
+        df = pd.read_csv(self.filepath, sep='\t' if self.filepath.endswith('.tsv') else ',')
+        
+        train_df = df.loc[df['split']=='train']
+        val_df = df.loc[df['split']=='val']
+        test_df = df.loc[df['split']=='test']
+        
         self.train_df = train_df
         self.val_df = val_df
         self.test_df = test_df
@@ -123,38 +119,38 @@ class LightningModuleForAutoModels(pl.LightningModule):
         self.save_hyperparameters(args)
         self.model = transformers.AutoModelForSequenceClassification.from_pretrained(self.hparams.base_path, num_labels=3)
 
-    @staticmethod
-    def loss_fn(logits, targets):
-        ce = torch.nn.CrossEntropyLoss(weight=torch.tensor([0.30,1.,0.10], device=logits.device))
-        return ce(logits, targets)
+    # @staticmethod
+    # def loss_fn(logits, targets):
+    #     ce = torch.nn.CrossEntropyLoss(weight=torch.tensor([0.30,1.,0.10], device=logits.device))
+    #     return ce(logits, targets)
     
     def training_step(self, batch, batch_idx):
-        labels = batch.pop("labels")
+        # labels = batch.pop("labels")
         output = self.model(**batch)
-        loss = self.loss_fn(output['logits'], labels)
+        # loss = self.loss_fn(output['logits'], labels)
         self.log(
-            "train_loss", loss.item(), on_step=True, on_epoch=True, prog_bar=True, logger=True
+            "train_loss", output['loss'].item(), on_step=True, on_epoch=True, prog_bar=True, logger=True
         )
-        return {"loss": loss, "logits": output['logits'], "true_preds": labels}
+        return {"loss": output['loss'], "logits": output['logits'], "true_preds": batch['labels']}
 
 
     def validation_step(self, batch, batch_idx):
-        labels = batch.pop("labels")
+        # labels = batch.pop("labels")
         output = self.model(**batch)
-        loss = self.loss_fn(output['logits'], labels)
+        # loss = self.loss_fn(output['logits'], labels)
         self.log(
-            "valid_loss", loss.item(), on_step=False, on_epoch=True, prog_bar=True, logger=True,
+            "valid_loss", output['loss'].item(), on_step=False, on_epoch=True, prog_bar=True, logger=True,
         )
-        return {"logits": output['logits'], "true_preds": labels}
+        return {"logits": output['logits'], "true_preds": batch['labels']}
     
     def test_step(self, batch, batch_idx):
-        labels = batch.pop("labels")
+        # labels = batch.pop("labels")
         output = self.model(**batch)
-        loss = self.loss_fn(output['logits'], labels)
+        # loss = self.loss_fn(output['logits'], labels)
         self.log(
-            "test_loss", loss.item(), on_step=False, on_epoch=True, prog_bar=True, logger=True,
+            "test_loss", output['loss'].item(), on_step=False, on_epoch=True, prog_bar=True, logger=True,
         )
-        return {"logits": output['logits'], "true_preds": labels}
+        return {"logits": output['logits'], "true_preds": batch['labels']}
 
     def configure_optimizers(self):
         params = list(self.model.named_parameters())
@@ -168,7 +164,7 @@ class LightningModuleForAutoModels(pl.LightningModule):
         optim = AdamW(grouped_parameters, lr=self.hparams.base_lr)
         
         # 55348 is the number of datapoints I am finetuning on, need to change it to some automatic method
-        num_training_steps = (53348 // self.hparams.effective_batch_size) * self.hparams.max_epochs
+        num_training_steps = (35198 // self.hparams.effective_batch_size) * self.hparams.max_epochs
         
         sched = get_cosine_schedule_with_warmup(
             optim, num_warmup_steps=0, num_training_steps=num_training_steps
