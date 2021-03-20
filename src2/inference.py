@@ -1,4 +1,5 @@
 import os
+from glob import glob
 from argparse import ArgumentParser
 import numpy as np
 import pandas as pd
@@ -36,6 +37,19 @@ def predict(args, dataframe, model, true_labels=False):
     print("----> classification report: \n", metrics.classification_report(y_true, np.argmax(y_pred, axis=-1)))
     return df
 
+def load_model_and_infer(args, data):
+    
+    pl_model = LightningModuleForAutoModels(args)
+    pl_model.model.load_state_dict(torch.load(f"models/{args.path_to_ckpt}"))
+    model = pl_model.model
+    model.to(args.device)
+    model.eval()
+
+    outs = predict(args, data, model, true_labels=True)
+
+    os.makedirs("outputs", exist_ok=True)
+    outs.to_csv(f"outputs/{args.path_to_ckpt[:-3]}.csv", index=False)
+    del pl_model, model, outs
 
 if __name__ == "__main__":
     pl.seed_everything(420)
@@ -78,13 +92,9 @@ if __name__ == "__main__":
     test_df = pd.read_csv("data/sentiment_validation.tsv", sep='\t')
     test_df.rename(columns={"brand":"brand_names"}, inplace=True)
 
-    pl_model = LightningModuleForAutoModels(args)
-    pl_model.model.load_state_dict(torch.load(f"models/{args.path_to_ckpt}"))
-    model = pl_model.model
-    model.to(args.device)
-    model.eval()
-
-    outs = predict(args, test_df, model, true_labels=True)
-
-    os.makedirs("outputs", exist_ok=True)
-    outs.to_csv(f"outputs/{args.path_to_ckpt}.csv", index=False)
+    if args.path_to_ckpt == "models":
+        for filename in glob("models/*.pt"):
+            args.path_to_ckpt = filename.split("/")[-1]
+            load_model_and_infer(args, data=test_df)
+    else:
+        load_model_and_infer(args, data=test_df)
