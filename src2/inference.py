@@ -18,7 +18,7 @@ def predict(args, dataframe, model, true_labels=False):
     ytrue = []
 
     for batch in dl:
-        # batch['labels'] =None  
+        # batch['labels'] =None
         with torch.no_grad():
             outs = model(**batch.to(args.device))
         ypreds.append(outs["logits"])
@@ -29,7 +29,7 @@ def predict(args, dataframe, model, true_labels=False):
 
     df = pd.DataFrame(y_pred)
     df["y_true"] = y_true
-    
+
     acc = metrics.accuracy_score(y_true, np.argmax(y_pred, axis=-1))
     f1 = metrics.f1_score(y_true, np.argmax(y_pred, axis=-1), average="weighted")
     print(f"----> accuracy_score: {acc},  f1_score: {f1}")
@@ -77,13 +77,14 @@ if __name__ == "__main__":
 
     test_df = pd.read_csv("data/sentiment_validation.tsv", sep='\t')
     test_df.rename(columns={"brand":"brand_names"}, inplace=True)
-    
-    model = LightningModuleForAutoModels(args)
-    model.load_state_dict(torch.load(f"models/{args.path_to_ckpt}"))
+
+    pl_model = LightningModuleForAutoModels(args)
+    pl_model.model.load_state_dict(torch.load(f"models/{args.path_to_ckpt}"))
+    model = pl_model.model
     model.to(args.device)
     model.eval()
 
-    outs = predict(args, test_df, model, true_labels=True) 
+    outs = predict(args, test_df, model, true_labels=True)
 
     os.makedirs("outputs", exist_ok=True)
     outs.to_csv(f"outputs/{args.path_to_ckpt}.csv", index=False)
