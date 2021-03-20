@@ -38,9 +38,10 @@ def predict(args, dataframe, model, true_labels=False):
     return df
 
 def load_model_and_infer(args, data):
-    
+
     pl_model = LightningModuleForAutoModels(args)
-    pl_model.model.load_state_dict(torch.load(f"models/{args.path_to_ckpt}"))
+    if args.path_to_ckpt.endswith('.pt'):
+        pl_model.model.load_state_dict(torch.load(f"models/{args.path_to_ckpt}"))
     model = pl_model.model
     model.to(args.device)
     model.eval()
