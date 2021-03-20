@@ -1,0 +1,180 @@
+----> accuracy_score: 0.35023041474654376,  f1_score: 0.21546600476174968
+----> classification report: 
+               precision    recall  f1-score   support
+
+           0       0.24      0.29      0.26        21
+           1       0.67      0.03      0.06       271
+           2       0.35      0.97      0.51       142
+
+    accuracy                           0.35       434
+   macro avg       0.42      0.43      0.28       434
+weighted avg       0.54      0.35      0.22       434
+
+----> accuracy_score: 0.3387096774193548,  f1_score: 0.1810308427198207
+----> classification report: 
+               precision    recall  f1-score   support
+
+           0       0.24      0.33      0.28        21
+           1       0.00      0.00      0.00       271
+           2       0.35      0.99      0.51       142
+
+    accuracy                           0.34       434
+   macro avg       0.20      0.44      0.26       434
+weighted avg       0.12      0.34      0.18       434
+
+----> accuracy_score: 0.33410138248847926,  f1_score: 0.18213138985179414
+----> classification report: 
+               precision    recall  f1-score   support
+
+           0       0.14      0.24      0.18        21
+           1       0.50      0.00      0.01       271
+           2       0.35      0.98      0.52       142
+
+    accuracy                           0.33       434
+   macro avg       0.33      0.41      0.23       434
+weighted avg       0.43      0.33      0.18       434
+
+----> accuracy_score: 0.33640552995391704,  f1_score: 0.17946890037426486
+----> classification report: 
+               precision    recall  f1-score   support
+
+           0       0.18      0.29      0.22        21
+           1       0.00      0.00      0.00       271
+           2       0.35      0.99      0.52       142
+
+    accuracy                           0.34       434
+   macro avg       0.18      0.42      0.25       434
+weighted avg       0.12      0.34      0.18       434
+
+----> accuracy_score: 0.33410138248847926,  f1_score: 0.1858864582905082
+----> classification report: 
+               precision    recall  f1-score   support
+
+           0       0.18      0.29      0.22        21
+           1       0.67      0.01      0.01       271
+           2       0.34      0.96      0.51       142
+
+    accuracy                           0.33       434
+   macro avg       0.40      0.42      0.25       434
+weighted avg       0.54      0.33      0.19       434
+
+----> accuracy_score: 0.33640552995391704,  f1_score: 0.18462636168124608
+----> classification report: 
+               precision    recall  f1-score   support
+
+           0       0.17      0.33      0.23        21
+           1       1.00      0.00      0.01       271
+           2       0.35      0.97      0.52       142
+
+    accuracy                           0.34       434
+   macro avg       0.51      0.44      0.25       434
+weighted avg       0.75      0.34      0.18       434
+
+----> accuracy_score: 0.3294930875576037,  f1_score: 0.17487987750931636
+----> classification report: 
+               precision    recall  f1-score   support
+
+           0       0.17      0.24      0.20        21
+           1       0.00      0.00      0.00       271
+           2       0.34      0.97      0.51       142
+
+    accuracy                           0.33       434
+   macro avg       0.17      0.40      0.23       434
+weighted avg       0.12      0.33      0.17       434
+
+----> accuracy_score: 0.33640552995391704,  f1_score: 0.1791743992882513
+----> classification report: 
+               precision    recall  f1-score   support
+
+           0       0.20      0.29      0.24        21
+           1       0.00      0.00      0.00       271
+           2       0.35      0.99      0.51       142
+
+    accuracy                           0.34       434
+   macro avg       0.18      0.42      0.25       434
+weighted avg       0.12      0.34      0.18       434
+
+----> accuracy_score: 0.33410138248847926,  f1_score: 0.182909341895517
+----> classification report: 
+               precision    recall  f1-score   support
+
+           0       0.21      0.33      0.25        21
+           1       0.50      0.00      0.01       271
+           2       0.34      0.96      0.51       142
+
+    accuracy                           0.33       434
+   macro avg       0.35      0.43      0.26       434
+weighted avg       0.43      0.33      0.18       434
+
+----> accuracy_score: 0.3271889400921659,  f1_score: 0.17639726168977124
+----> classification report: 
+               precision    recall  f1-score   support
+
+           0       0.13      0.29      0.18        21
+           1       0.00      0.00      0.00       271
+           2       0.35      0.96      0.51       142
+
+    accuracy                           0.33       434
+   macro avg       0.16      0.41      0.23       434
+weighted avg       0.12      0.33      0.18       434
+
+----> accuracy_score: 0.3317972350230415,  f1_score: 0.17522439110691748
+----> classification report: 
+               precision    recall  f1-score   support
+
+           0       0.14      0.19      0.16        21
+           1       0.00      0.00      0.00       271
+           2       0.35      0.99      0.51       142
+
+    accuracy                           0.33       434
+   macro avg       0.16      0.39      0.22       434
+weighted avg       0.12      0.33      0.18       434
+
+----> accuracy_score: 0.3271889400921659,  f1_score: 0.17679189479954371
+----> classification report: 
+               precision    recall  f1-score   support
+
+           0       0.15      0.33      0.21        21
+           1       0.00      0.00      0.00       271
+           2       0.35      0.95      0.51       142
+
+    accuracy                           0.33       434
+   macro avg       0.17      0.43      0.24       434
+weighted avg       0.12      0.33      0.18       434
+
+----> accuracy_score: 0.3317972350230415,  f1_score: 0.1803514857804494
+----> classification report: 
+               precision    recall  f1-score   support
+
+           0       0.17      0.24      0.20        21
+           1       0.33      0.00      0.01       271
+           2       0.34      0.97      0.51       142
+
+    accuracy                           0.33       434
+   macro avg       0.28      0.40      0.24       434
+weighted avg       0.33      0.33      0.18       434
+
+----> accuracy_score: 0.3294930875576037,  f1_score: 0.17638675541901347
+----> classification report: 
+               precision    recall  f1-score   support
+
+           0       0.17      0.29      0.21        21
+           1       0.00      0.00      0.00       271
+           2       0.34      0.96      0.51       142
+
+    accuracy                           0.33       434
+   macro avg       0.17      0.42      0.24       434
+weighted avg       0.12      0.33      0.18       434
+
+----> accuracy_score: 0.34101382488479265,  f1_score: 0.19420492061871114
+----> classification report: 
+               precision    recall  f1-score   support
+
+           0       0.17      0.33      0.23        21
+           1       1.00      0.01      0.02       271
+           2       0.35      0.97      0.52       142
+
+    accuracy                           0.34       434
+   macro avg       0.51      0.44      0.26       434
+weighted avg       0.75      0.34      0.19       434
+
