@@ -7,6 +7,7 @@ python -m spacy download en_core_web_sm
 pip install google_trans_new
 pip install tqdm
 pip install demoji
+pip install syntok
 """
 
 import spacy
@@ -24,6 +25,8 @@ import demoji
 if demoji.last_downloaded_timestamp()==None:
   demoji.download_codes()
 import re
+import syntok.segmenter as segmenter
+
 
 def detect_lang(texts, truncate=True):
   """
@@ -154,3 +157,18 @@ def clean_articles(articles):
     cleaned_article = _clean_article(article)
     cleaned_articles.append(cleaned_article)
   return cleaned_articles
+
+def remove_space_before_dot(text):
+  text = re.sub(r'(\w+)\s\.', r'\1.', text)
+  text = re.sub(r'(\d+)\.\s(\d+)', r'\1.\2', text)
+  return text
+
+def split_into_sentences(text):
+  text = remove_space_before_dot(text)
+  sentences = []
+  for paragraph in segmenter.process(text):
+    for sentence in paragraph:
+      sent = ' '.join([token.value for token in sentence])
+      sent = remove_space_before_dot(sent)
+      sentences.append(sent)
+  return sentences
