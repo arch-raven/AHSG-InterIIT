@@ -220,7 +220,7 @@ replace_dict = {'एसर':'Acer',
 pattern = re.compile(r'(?<!\w)(' + '|'.join(re.escape(key) for key in replace_dict.keys()) + r')(?!\w)')
  
 brand_list_sp = list(r'\b'+w.lower()+r'\b' for w  in brands)
-brand_list_sp.append('mi')
+brand_list_sp.append(r'\b'+'mi'+r'\b')
 # brand_list_sp += list(' '+w.lower()+'.' for w  in brands)
 # brand_list_sp += list(w.lower()+' ' for w  in brands)
 brand_list = list(w.lower() for w  in brands)    
