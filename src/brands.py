@@ -220,6 +220,7 @@ replace_dict = {'एसर':'Acer',
 pattern = re.compile(r'(?<!\w)(' + '|'.join(re.escape(key) for key in replace_dict.keys()) + r')(?!\w)')
  
 brand_list_sp = list(r'\b'+w.lower()+r'\b' for w  in brands)
+brand_list_sp.append('mi')
 # brand_list_sp += list(' '+w.lower()+'.' for w  in brands)
 # brand_list_sp += list(w.lower()+' ' for w  in brands)
 brand_list = list(w.lower() for w  in brands)    
@@ -289,11 +290,15 @@ def _get_brand_indices(text):
     for brand in brands:
         occ = []
         pattern = r'\b'+brand+r'\b'
-        for i,word in enumerate(text.split(' ')):
-            if re.search(pattern,word,re.IGNORECASE)!= None:
+        pattern_htag = brand
+        split_text = re.findall(r"[\w]+|[^\s\w]", text)
+        for i,word in enumerate(split_text):
+            if split_text[max(0,i-1)] == '#' and re.search(pattern_htag,word,re.IGNORECASE)!= None:
+                occ.append(i)            
+            elif re.search(pattern,word,re.IGNORECASE)!= None:
                 occ.append(i)
         match_indices[brand] = occ
-    return match_indices 
+    return match_indices
 
 def get_brand_indices(texts):
     '''
