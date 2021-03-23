@@ -8,8 +8,8 @@ pip install google_trans_new
 pip install tqdm
 pip install demoji
 pip install syntok
+pip install nltk
 """
-
 import spacy
 nlp = spacy.load('en_core_web_sm')
 from spacy_langdetect import LanguageDetector
@@ -144,6 +144,7 @@ def clean_tweets(tweets, remove_emoji=True):
 
 
 def _clean_article(article):
+    article = re.sub(u'(\N{COPYRIGHT SIGN}|\N{TRADE MARK SIGN}|\N{REGISTERED SIGN})','', article)
     article = article.replace('|',' ')
     article = article.replace('^','')
     article = re.sub(r"http\S+", "", article)
@@ -200,19 +201,48 @@ def decompose_by_rule(text):
     sentences.append(compound[start:])
     return sentences
 
-def segment_by_rule(paragraph,brands): ## Always ignore the first entry or key-value pair of the returned dictionary.
-    paragraph = paragraph.lower()
-    list_of_sentences = nltk.tokenize.sent_tokenize(paragraph)
+def segment_by_rule(text): ## Always ignore the first entry or key-value pair of the returned dictionary.
+    #paragraph = paragraph.lower()
+    brandslist = brands.get_brands([text],verbose=False)[0]
+    list_of_sentences = split_into_sentences(text)
     brand_specific_chunks = dict()
-    chunk = []
+    brand_specific_chunks["ignore"] = []
+    for brandname in brandslist:
+      brand_specific_chunks[brandname] = []
+    #print(brand_specific_chunks)
     curr_brand = "ignore"
     for sentence in list_of_sentences:
-        tokens = sentence.split()
-        for brand in brands:
-            if brand in tokens:
-                brand_specific_chunks[curr_brand] = chunk
-                curr_brand = brand
-                chunk = []  ## reinitialising chunk as the next sentences should be talking about the newly detected brand.
-        chunk.append(sentence)
-    brand_specific_chunks[curr_brand] = chunk
+        #tokens = sentence.split()
+        brandlist_sent = brands.get_brands([sentence],verbose=False)[0]
+        #print(brandlist_sent)
+        if len(brandlist_sent) == 0:
+          brand_specific_chunks[curr_brand].append(sentence)
+        elif len(brandlist_sent) == 1:
+          curr_brand = brandlist_sent[0]
+          brand_specific_chunks[curr_brand].append(sentence)
+        elif len(brandlist_sent) > 1:
+          #print('whoop!', sentence)
+          brandlist_sent_sp = [r'\b'+w+r'\b' for w in brandlist_sent]
+          b_patt = '|'.join(brandlist_sent_sp)
+          #print(b_patt)
+          curr_phrase = []
+          for word in sentence.split(' '):
+            #print(word)
+            if len(re.findall(b_patt,word, re.IGNORECASE))>0 and (curr_brand != re.findall(b_patt,word, re.IGNORECASE)[0].lower()):
+              if len(curr_phrase) > 0:
+                brand_specific_chunks[curr_brand].append(' '.join(curr_phrase))
+                curr_phrase = []
+              #print('here')
+              curr_brand = re.findall(b_patt,word, re.IGNORECASE)[0].lower()
+              #print('! ', curr_brand)
+            curr_phrase.append(word)
+          
+          if len(curr_phrase)>0:
+            brand_specific_chunks[curr_brand].append(' '.join(curr_phrase))
+    remove_keys = set()
+    for key in brand_specific_chunks.keys():
+      if len(brand_specific_chunks[key]) == 0:
+        remove_keys.insert(keys)
+    remove_keys.add('ignore')
+    brand_specific_chunks = {key:val for key, val in brand_specific_chunks.items() if key not in remove_keys}
     return brand_specific_chunks

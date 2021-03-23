@@ -76,6 +76,7 @@ brands = {'AT&T',
  'Qtek',
  'Razer',
  'Realme',
+ 'Realmi',
  'Sagem',
  'Samsung',
  'Sendo',
@@ -100,6 +101,7 @@ brands = {'AT&T',
  'XOLO',
  'Xgody',
  'Xiaomi',
+ 'Redmi',
  'Yezz',
  'Yota',
  'ZTE',
@@ -252,13 +254,13 @@ def _get_brands(text):
     brandlist = _get_unique_brands(brandlist)
     return brandlist
 
-def get_brands(texts):
+def get_brands(texts, verbose=True):
     '''
     A function that takes a list of strings and returns a list of brands in each string
     texts: list of strings
     '''
     brandlists = [] 
-    for text in tqdm(texts):
+    for text in (tqdm(texts) if verbose else texts):
         brandlist = _get_brands(text)
         brandlists.append(brandlist)
     return brandlists

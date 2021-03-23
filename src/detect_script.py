@@ -1,5 +1,13 @@
 # -*- coding: utf-8 -*-
 """
+###################################################################################
+# Code taken from https://github.com/sanskrit-coders/indic_transliteration.git    #
+# We take no credit for this particular script, we couldn't get the package to    #
+# work as a whole and so we took out this isolated python script. All credit to   # 
+# Sanskrit-Coders                                                                 #
+###################################################################################
+"""
+"""
     detect
     ~~~~~~
     Code for automatically detecting a transliteration scheme.
