@@ -1,6 +1,5 @@
 """
 Headline Generator
-
 """
 import os
 import sys
@@ -15,12 +14,14 @@ from torchtext.data.metrics import bleu_score
 from rouge import Rouge
 from transformers import T5ForConditionalGeneration, T5Tokenizer
 class headline_gen():
-    def __init__(self, path=None):
+    def __init__(self,device,path=None):
+        self.device=device
         
-        self.model=T5ForConditionalGeneration.from_pretrained('t5-base').cuda()
+        self.model=T5ForConditionalGeneration.from_pretrained('t5-base').to(self.device)
         self.tokenizer=T5Tokenizer.from_pretrained('t5-base')
         if path is not None:
             self.model.load_state_dict(torch.load(path))
+            
     def generate_batch(self,data):
         output=random.sample(data,4)
 
@@ -30,7 +31,6 @@ class headline_gen():
                 label.append(dat[1])
 
         return inp,label
-    
     
     def fit(self,art, head):
         assert len(art) == len(head)
@@ -46,7 +46,7 @@ class headline_gen():
                 self.model.train()
                 inp,label=self.generate_batch(data)
                 input=self.tokenizer.prepare_seq2seq_batch(src_texts=inp, tgt_texts=label, padding=True, return_tensors='pt',max_length=600,truncation=True)
-                outputs=self.model(input_ids=input['input_ids'].cuda(),labels=input['labels'].cuda())
+                outputs=self.model(input_ids=input['input_ids'].to(self.device),labels=input['labels'].to(self.device))
                 loss=outputs[0]
                 
                 scalar+=loss.item()
@@ -61,6 +61,7 @@ class headline_gen():
 
                 loss.backward()
                 self.optimizer.step()
+                
     def predict(self,articles):
         
         with torch.no_grad():
@@ -69,7 +70,7 @@ class headline_gen():
                 inp=[line]
                 input=self.tokenizer.prepare_seq2seq_batch(src_texts=inp, padding=True, return_tensors='pt')
 
-                output=self.model.generate(input_ids=input['input_ids'].cuda(),
+                output=self.model.generate(input_ids=input['input_ids'].to(self.device),
                                       num_beams=5, early_stopping=True, max_length=35)
                 out=self.tokenizer.batch_decode(output)
                 torch.cuda.empty_cache()
