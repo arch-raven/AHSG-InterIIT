@@ -16,6 +16,10 @@ def mobile_tech_binary_classifier(inference_data):
     data = vectorizer.transform(inference_data['Text'])
     y_pred = classifier.predict(data)
     inference_data['Mobile_Tech'] = y_pred
+    options = [['google'],['microsoft'],['asus'],['hp']]
+    for option in options:
+        indexes = inference_data.index[inference_data['brands'].apply(lambda x:x == option)]
+        inference_data = inference_data.drop(indexes,axis = 0)
     inference_data.loc[inference_data['num_brands']>0, 'Mobile_Tech'] = 1
     return inference_data
 
