@@ -30,14 +30,6 @@ class headline_gen():
                 label.append(dat[1])
 
         return inp,label
-    def preprocess_article(self,article):
-        article = re.sub(r"http\S+", "", article)
-        article = re.sub(r"www.\S+", "", article)
-        article = re.sub(r"<\S+", "", article)
-        article = re.sub('\n+', " ",article)
-        article = article.strip()
-        
-        return article
     
     
     def fit(self,art, head):
@@ -45,11 +37,6 @@ class headline_gen():
         data=[]
         for i,j in zip(art,head):
             data.append([i,j])
-        for i in range(len(art)):
-            data[i][0]= self.preprocess_article(data[i][0].lstrip().rstrip().lower())
-            data[i][1]= self.preprocess_article(data[i][1].lstrip().rstrip().lower())
-        
-
     
         self.optimizer=optim.AdamW(self.model.parameters(),lr=0.00001)
 
@@ -74,11 +61,7 @@ class headline_gen():
 
                 loss.backward()
                 self.optimizer.step()
-    def predict(self,art):
-        articles=[]
-        for i in range(len(art)):
-            articles.append(self.preprocess_article(art[i].lstrip().rstrip().lower()))
-            
+    def predict(self,articles):
         
         with torch.no_grad():
             preds=[]
