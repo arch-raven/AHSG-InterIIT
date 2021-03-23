@@ -23,13 +23,14 @@ from tqdm.auto import tqdm
 import detect_script
 import demoji
 if demoji.last_downloaded_timestamp()==None:
-demoji.download_codes()
+  demoji.download_codes()
 import re
 import syntok.segmenter as segmenter
+import brands
 
 
 def detect_lang(texts, truncate=True):
-    """
+  """
   Input:
   texts: a list or a numpy array of strings
   Output:
@@ -105,20 +106,21 @@ def translate(texts,hinglish=False):
     return translated_texts, len(translated_texts)
 
 def _clean_tweet(tweet, remove_emoji=True):
+  mentions = re.findall(r'\B@\w*[a-zA-Z]+\w*', tweet)
+  for mention in mentions:
+    if re.search(brands.search_exp,mention,re.IGNORECASE)!=None:
+      brandname = re.findall(brands.search_exp,mention,re.IGNORECASE)[0]
+      tweet = tweet.replace(mention,brandname)
+    else:
+      tweet = tweet.replace(mention,'')
   tweet = tweet.replace('|',' ')
   tweet = tweet.replace('^','')
-  tweet = tweet.replace('RT ','')
-  tweet = tweet.replace('QT ','')
+  tweet = re.sub(r'\.{2}\.+\s*',' ', tweet, flags=re.VERBOSE)
+  tweet = re.sub(r'RT\s+','', tweet)
+  tweet = re.sub(r'QT\s+','', tweet)
   tweet = re.sub(r"http\S+", "", tweet) 
   tweet = re.sub(r"\s+"," ",tweet)
   tweet = re.sub(r"@\w+[:]?", "", tweet)
-
-  clean = re.sub(r"""
-              [,.;:@#?!&$]+  # Accept one or more copies of punctuation
-              \ *           # plus zero or more copies of a space,
-              """,
-              " ",          # and replace it with a single space
-              tweet, flags=re.VERBOSE)
   if remove_emoji:
       tweet = demoji.replace(tweet)
   else:
