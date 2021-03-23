@@ -7,7 +7,6 @@ from sklearn import metrics
 
 import torch
 import transformers
-import pytorch_lightning as pl
 
 from sentiment_classification import DatasetForTokenizedSentimentClassification, SimpleBatchDataLoader, TokenClassifier
 

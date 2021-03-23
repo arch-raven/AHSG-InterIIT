@@ -5,3 +5,4 @@ pip install google_trans_new
 pip install demoji
 pip install syntok
 pip install transformers
+pip install sentencepiece

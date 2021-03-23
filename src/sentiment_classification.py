@@ -44,7 +44,6 @@ class DatasetForTokenizedSentimentClassification(torch.utils.data.Dataset):
         self.texts = texts
         self.brand2sentiment = brand2sentiment
         self.idx2sentiment = idx2sentiment
-
         self.tokenizer = transformers.AutoTokenizer.from_pretrained("ganeshkharad/gk-hinglish-sentiment")
 
     def __len__(self):
