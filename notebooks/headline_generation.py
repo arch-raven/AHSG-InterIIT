@@ -87,9 +87,16 @@ class headline_gen():
                 input=self.tokenizer.prepare_seq2seq_batch(src_texts=inp, padding=True, return_tensors='pt')
 
                 output=self.model.generate(input_ids=input['input_ids'].cuda(),
-                                      num_beams=5, early_stopping=True, max_length=20)
+                                      num_beams=5, early_stopping=True, max_length=35)
                 out=self.tokenizer.batch_decode(output)
                 torch.cuda.empty_cache()
                 out[0] = re.sub(r"<\S+", "", out[0])
-                preds.append(out[0])
+                temp=out[0].split()
+                if len(temp)>20:
+                        temp=temp[:20]
+                final=''.join(x+' ' for x in temp)
+                final=final.lstrip().rstrip()
+                
+                preds.append(final)
+             
             return preds
