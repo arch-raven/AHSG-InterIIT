@@ -199,3 +199,20 @@ def decompose_by_rule(text):
         cnt += 1
     sentences.append(compound[start:])
     return sentences
+
+def segment_by_rule(paragraph,brands): ## Always ignore the first entry or key-value pair of the returned dictionary.
+    paragraph = paragraph.lower()
+    list_of_sentences = nltk.tokenize.sent_tokenize(paragraph)
+    brand_specific_chunks = dict()
+    chunk = []
+    curr_brand = "ignore"
+    for sentence in list_of_sentences:
+        tokens = sentence.split()
+        for brand in brands:
+            if brand in tokens:
+                brand_specific_chunks[curr_brand] = chunk
+                curr_brand = brand
+                chunk = []  ## reinitialising chunk as the next sentences should be talking about the newly detected brand.
+        chunk.append(sentence)
+    brand_specific_chunks[curr_brand] = chunk
+    return brand_specific_chunks
