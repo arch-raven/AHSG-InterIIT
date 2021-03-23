@@ -39,7 +39,7 @@ class SentimentClassifier:
             
         y_pred = torch.softmax(torch.cat(ypreds), dim=-1).to("cpu").detach().numpy()
         y_pred = np.argmax(y_pred, axis=-1)
-        print(y_pred, brand_list)
+        #print(y_pred, brand_list)
         results = [{}]*len(brand_list)
         for i in range(len(brand_list)):
             for br in brand_list[i]:

@@ -218,7 +218,8 @@ def segment_by_rule(text): ## Always ignore the first entry or key-value pair of
         if len(brandlist_sent) == 0:
           brand_specific_chunks[curr_brand].append(sentence)
         elif len(brandlist_sent) == 1:
-          curr_brand = brandlist_sent[0]
+          if brandlist_sent[0] in brand_specific_chunks.keys():
+            curr_brand = brandlist_sent[0]
           brand_specific_chunks[curr_brand].append(sentence)
         elif len(brandlist_sent) > 1:
           #print('whoop!', sentence)
@@ -233,7 +234,9 @@ def segment_by_rule(text): ## Always ignore the first entry or key-value pair of
                 brand_specific_chunks[curr_brand].append(' '.join(curr_phrase))
                 curr_phrase = []
               #print('here')
-              curr_brand = re.findall(b_patt,word, re.IGNORECASE)[0].lower()
+              new_brandname = re.findall(b_patt,word, re.IGNORECASE)[0].lower()
+              if new_brandname in brand_specific_chunks.keys():
+                  curr_brand = re.findall(b_patt,word, re.IGNORECASE)[0].lower()
               #print('! ', curr_brand)
             curr_phrase.append(word)
           
@@ -242,7 +245,7 @@ def segment_by_rule(text): ## Always ignore the first entry or key-value pair of
     remove_keys = set()
     for key in brand_specific_chunks.keys():
       if len(brand_specific_chunks[key]) == 0:
-        remove_keys.insert(keys)
+        remove_keys.add(key)
     remove_keys.add('ignore')
     brand_specific_chunks = {key:val for key, val in brand_specific_chunks.items() if key not in remove_keys}
     return brand_specific_chunks
