@@ -172,3 +172,28 @@ def split_into_sentences(text):
       sent = remove_space_before_dot(sent)
       sentences.append(sent)
   return sentences
+
+def decompose_by_rule(text):
+    doc = nlp(text)
+    idx = 0
+    indices = []
+    compound = []
+    print("The subjects detected are:")
+    for token in doc:
+        compound.append(token.text)
+        if token.dep == spacy.symbols.nsubj:
+            print(token.text)
+            indices.append(idx)
+        idx += 1
+    
+    sentences = []
+    cnt = 1
+    start = 0
+    #print("indices ",indices)
+    #compound = text.split()
+    while cnt < len(indices):
+        sentences.append(compound[start:indices[cnt]])
+        start = indices[cnt]
+        cnt += 1
+    sentences.append(compound[start:])
+    return sentences
