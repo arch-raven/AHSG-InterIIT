@@ -125,11 +125,13 @@ class DatasetForTokenizedSentimentClassification(torch.utils.data.Dataset):
         return batch
 
 class TokenClassifier(torch.nn.Module):
-    def __init__(self, model):
+    def __init__(self, model, for_inference):
         super().__init__()
+
         self.base = model.bert
         self.dropout = model.dropout
         self.clf = model.classifier
+        self.for_inference = for_inference
     
     @staticmethod
     def loss_fn(inp, ytrue):
@@ -144,8 +146,11 @@ class TokenClassifier(torch.nn.Module):
         )
         out = self.dropout(out['last_hidden_state'])
         out = self.clf(out)
-        loss = self.loss_fn(out.view(-1,3), batch['labels'].view(-1))
-        return {'loss':loss, 'logits':out, 'labels':batch['labels'],'labels_mask':batch['labels']!=-100}
+        if not self.for_inference:
+            loss = self.loss_fn(out.view(-1,3), batch['labels'].view(-1))
+        else:
+            loss=0
+        return {'loss':loss, 'logits':out}
 
 if __name__ == '__main__':
     gk_model = transformers.AutoModelForSequenceClassification.from_pretrained('ganeshkharad/gk-hinglish-sentiment', num_labels=3)
