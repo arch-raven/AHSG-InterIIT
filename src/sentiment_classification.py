@@ -125,18 +125,14 @@ class DatasetForTokenizedSentimentClassification(torch.utils.data.Dataset):
         return batch
 
 class TokenClassifier(torch.nn.Module):
-    def __init__(self, model, for_inference):
+    def __init__(self, model, threshold=0.5):
         super().__init__()
 
         self.base = model.bert
         self.dropout = model.dropout
         self.clf = model.classifier
-        self.for_inference = for_inference
-    
-    @staticmethod
-    def loss_fn(inp, ytrue):
-        ce = torch.nn.CrossEntropyLoss(weight=torch.tensor([0.,1.,1.], device=inp.device))
-        return ce(inp,ytrue)    
+        self.binary = nn.Linear(2,1)
+        self.threshold = threshold
 
     def forward(self, batch, **kwargs):
         out = self.base(
@@ -144,14 +140,11 @@ class TokenClassifier(torch.nn.Module):
             attention_mask=batch['attention_mask'],
             token_type_ids=batch.get('token_type_ids', None),
         )
-        out = self.dropout(out['last_hidden_state'])
+        out = self.dropout(out[1])
         out = self.clf(out)
-        if not self.for_inference:
-            loss = self.loss_fn(out.view(-1,3), batch['labels'].view(-1))
-        else:
-            loss=0
-        return {'loss':loss, 'logits':out}
+        out = self.binary(out[:,1:]).squeeze(dim=-1)
+        return out.view(-1).item() > self.threshold
 
 if __name__ == '__main__':
     gk_model = transformers.AutoModelForSequenceClassification.from_pretrained('ganeshkharad/gk-hinglish-sentiment', num_labels=3)
-    model = TokenClassifier(gk_model)
+    model = TokenClassifier(gk_model, True)
