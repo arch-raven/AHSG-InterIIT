@@ -23,13 +23,13 @@ from tqdm.auto import tqdm
 import detect_script
 import demoji
 if demoji.last_downloaded_timestamp()==None:
-  demoji.download_codes()
+demoji.download_codes()
 import re
 import syntok.segmenter as segmenter
 
 
 def detect_lang(texts, truncate=True):
-  """
+    """
   Input:
   texts: a list or a numpy array of strings
   Output:
