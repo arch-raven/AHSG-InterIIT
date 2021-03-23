@@ -26,6 +26,7 @@ if demoji.last_downloaded_timestamp()==None:
   demoji.download_codes()
 import re
 import syntok.segmenter as segmenter
+import brands
 
 
 def detect_lang(texts, truncate=True):
@@ -105,20 +106,21 @@ def translate(texts,hinglish=False):
     return translated_texts, len(translated_texts)
 
 def _clean_tweet(tweet, remove_emoji=True):
+  mentions = re.findall(r'\B@\w*[a-zA-Z]+\w*:*', tweet)
+  for mention in mentions:
+    if re.search(brands.search_exp,mention,re.IGNORECASE)!=None:
+      brandname = re.findall(brands.search_exp,mention,re.IGNORECASE)[0]
+      tweet = tweet.replace(mention,brandname)
+    else:
+      tweet = tweet.replace(mention,'')
   tweet = tweet.replace('|',' ')
   tweet = tweet.replace('^','')
-  tweet = tweet.replace('RT ','')
-  tweet = tweet.replace('QT ','')
+  tweet = re.sub(r'\.{2}\.+\s*',' ', tweet, flags=re.VERBOSE)
+  tweet = re.sub(r'RT\s+','', tweet)
+  tweet = re.sub(r'QT\s+','', tweet)
   tweet = re.sub(r"http\S+", "", tweet) 
   tweet = re.sub(r"\s+"," ",tweet)
   tweet = re.sub(r"@\w+[:]?", "", tweet)
-
-  clean = re.sub(r"""
-              [,.;:@#?!&$]+  # Accept one or more copies of punctuation
-              \ *           # plus zero or more copies of a space,
-              """,
-              " ",          # and replace it with a single space
-              tweet, flags=re.VERBOSE)
   if remove_emoji:
       tweet = demoji.replace(tweet)
   else:
@@ -126,7 +128,7 @@ def _clean_tweet(tweet, remove_emoji=True):
   tweet = tweet.strip()
   return tweet
 
-def clean_tweets(tweets):
+def clean_tweets(tweets, remove_emoji=True):
   '''
   Takes a list of tweets and returns a list of cleaned tweets
   Input: 
@@ -136,7 +138,7 @@ def clean_tweets(tweets):
   '''
   cleaned_tweets = []
   for tweet in tweets:
-    cleaned_tweet = _clean_tweet(tweet)
+    cleaned_tweet = _clean_tweet(tweet, remove_emoji)
     cleaned_tweets.append(cleaned_tweet)
   return cleaned_tweets
 
@@ -172,3 +174,28 @@ def split_into_sentences(text):
       sent = remove_space_before_dot(sent)
       sentences.append(sent)
   return sentences
+
+def decompose_by_rule(text):
+    doc = nlp(text)
+    idx = 0
+    indices = []
+    compound = []
+    print("The subjects detected are:")
+    for token in doc:
+        compound.append(token.text)
+        if token.dep == spacy.symbols.nsubj:
+            print(token.text)
+            indices.append(idx)
+        idx += 1
+    
+    sentences = []
+    cnt = 1
+    start = 0
+    #print("indices ",indices)
+    #compound = text.split()
+    while cnt < len(indices):
+        sentences.append(compound[start:indices[cnt]])
+        start = indices[cnt]
+        cnt += 1
+    sentences.append(compound[start:])
+    return sentences
