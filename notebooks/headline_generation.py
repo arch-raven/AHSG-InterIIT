@@ -20,7 +20,7 @@ class headline_gen():
         self.model=T5ForConditionalGeneration.from_pretrained('t5-base').to(self.device)
         self.tokenizer=T5Tokenizer.from_pretrained('t5-base')
         if path is not None:
-            self.model.load_state_dict(torch.load(path))
+            self.model.load_state_dict(torch.load(path,map_location=torch.device(self.device)))
             
     def generate_batch(self,data):
         output=random.sample(data,4)
