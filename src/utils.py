@@ -106,7 +106,7 @@ def translate(texts,hinglish=False):
     return translated_texts, len(translated_texts)
 
 def _clean_tweet(tweet, remove_emoji=True):
-  mentions = re.findall(r'\B@\w*[a-zA-Z]+\w*', tweet)
+  mentions = re.findall(r'\B@\w*[a-zA-Z]+\w*:*', tweet)
   for mention in mentions:
     if re.search(brands.search_exp,mention,re.IGNORECASE)!=None:
       brandname = re.findall(brands.search_exp,mention,re.IGNORECASE)[0]
@@ -128,7 +128,7 @@ def _clean_tweet(tweet, remove_emoji=True):
   tweet = tweet.strip()
   return tweet
 
-def clean_tweets(tweets):
+def clean_tweets(tweets, remove_emoji=True):
   '''
   Takes a list of tweets and returns a list of cleaned tweets
   Input: 
@@ -138,7 +138,7 @@ def clean_tweets(tweets):
   '''
   cleaned_tweets = []
   for tweet in tweets:
-    cleaned_tweet = _clean_tweet(tweet)
+    cleaned_tweet = _clean_tweet(tweet, remove_emoji)
     cleaned_tweets.append(cleaned_tweet)
   return cleaned_tweets
 
