@@ -314,3 +314,5 @@ def get_brand_indices(texts):
         match_indices = _get_brand_indices(text)
         results.append(match_indices)
     return results
+
+

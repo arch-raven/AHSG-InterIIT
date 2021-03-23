@@ -6,6 +6,8 @@ pip install spacy-langdetect
 python -m spacy download en_core_web_sm
 pip install google_trans_new
 pip install tqdm
+pip install demoji
+pip install syntok
 """
 
 import spacy
@@ -19,6 +21,12 @@ import time
 import random 
 from tqdm.auto import tqdm
 import detect_script
+import demoji
+if demoji.last_downloaded_timestamp()==None:
+  demoji.download_codes()
+import re
+import syntok.segmenter as segmenter
+
 
 def detect_lang(texts, truncate=True):
   """
@@ -95,3 +103,72 @@ def translate(texts,hinglish=False):
     except:
         return translated_texts, len(translated_texts)
     return translated_texts, len(translated_texts)
+
+def _clean_tweet(tweet, remove_emoji=True):
+  tweet = tweet.replace('|',' ')
+  tweet = tweet.replace('^','')
+  tweet = tweet.replace('RT ','')
+  tweet = tweet.replace('QT ','')
+  tweet = re.sub(r"http\S+", "", tweet) 
+  tweet = re.sub(r"\s+"," ",tweet)
+  tweet = re.sub(r"@\w+[:]?", "", tweet)
+
+  clean = re.sub(r"""
+              [,.;:@#?!&$]+  # Accept one or more copies of punctuation
+              \ *           # plus zero or more copies of a space,
+              """,
+              " ",          # and replace it with a single space
+              tweet, flags=re.VERBOSE)
+  if remove_emoji:
+      tweet = demoji.replace(tweet)
+  else:
+      tweet = demoji.replace_with_desc(tweet)
+  tweet = tweet.strip()
+  return tweet
+
+def clean_tweets(tweets):
+  '''
+  Takes a list of tweets and returns a list of cleaned tweets
+  Input: 
+  texts - a list of strings (tweet)
+  Output:
+  cleaned_tweets - a list of cleaned strings
+  '''
+  cleaned_tweets = []
+  for tweet in tweets:
+    cleaned_tweet = _clean_tweet(tweet)
+    cleaned_tweets.append(cleaned_tweet)
+  return cleaned_tweets
+
+
+def _clean_article(article):
+    article = article.replace('|',' ')
+    article = article.replace('^','')
+    article = re.sub(r"http\S+", "", article)
+    article = re.sub(r"www.\S+", "", article)
+    #article = re.sub(r'[.]\n?', ". ",article)
+    article = re.sub(r'\s+', " ",article)
+    article = article.strip()
+    return article
+
+def clean_articles(articles):
+  cleaned_articles = []
+  for article in articles:
+    cleaned_article = _clean_article(article)
+    cleaned_articles.append(cleaned_article)
+  return cleaned_articles
+
+def remove_space_before_dot(text):
+  text = re.sub(r'(\w+)\s\.', r'\1.', text)
+  text = re.sub(r'(\d+)\.\s(\d+)', r'\1.\2', text)
+  return text
+
+def split_into_sentences(text):
+  text = remove_space_before_dot(text)
+  sentences = []
+  for paragraph in segmenter.process(text):
+    for sentence in paragraph:
+      sent = ' '.join([token.value for token in sentence])
+      sent = remove_space_before_dot(sent)
+      sentences.append(sent)
+  return sentences
