@@ -143,7 +143,7 @@ class TokenClassifier(torch.nn.Module):
         out = self.dropout(out[1])
         out = self.clf(out)
         out = self.binary(out[:,1:]).squeeze(dim=-1)
-        return out.view(-1).item() > self.threshold
+        return int(out.view(-1).item() > self.threshold) + 1
 
 if __name__ == '__main__':
     gk_model = transformers.AutoModelForSequenceClassification.from_pretrained('ganeshkharad/gk-hinglish-sentiment', num_labels=3)

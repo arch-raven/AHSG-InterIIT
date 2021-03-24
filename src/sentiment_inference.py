@@ -1,4 +1,5 @@
 import os
+import pickle
 from glob import glob
 from argparse import ArgumentParser
 import numpy as np
@@ -12,15 +13,20 @@ from sentiment_classification import DatasetForTokenizedSentimentClassification,
 
 
 class SentimentClassifier:
-    def __init__(self, threshold=0.5, **kwargs):
-        self.batch_size = batch_size
+    def __init__(self, regression_path, tfidf_path, bert_path,threshold=0.5, **kwargs):
         gk_model = transformers.AutoModelForSequenceClassification.from_pretrained('ganeshkharad/gk-hinglish-sentiment', num_labels=3)
         self.device = torch.device('gpu' if torch.cuda.is_available() else 'cpu')
         self.model = TokenClassifier(gk_model, threshold=threshold)
+        self.model.load_state_dict(torch.load(bert_path))
         self.model.to(self.device)
         self.model.eval()
         self.tokenizer = transformers.AutoTokenizer.from_pretrained("ganeshkharad/gk-hinglish-sentiment")
         del gk_model
+        with open(regression_path, 'rb') as fh:
+            self.regression = pickle.load(fh)
+        with open(tfidf_path, 'rb') as fh:
+            self.tfidf = pickle.load(fh)
+        
 
     def predict(self, list_of_dicts, is_tweets=True):
         if is_tweets:
@@ -37,10 +43,13 @@ class SentimentClassifier:
                         is_split_into_words=False,
                     )
                 with torch.no_grad():
-                    outs = self.model(batch.to(self.device)
-                
+                    outs = self.model(batch.to(self.device))
+                neg = self.predict_for_negative(tweet_dict['Text'])
                 for br in brands_found:
-                    output_list_of_dicts[-1][br] = outs
+                    if neg==-1:
+                        output_list_of_dicts[-1][br] = outs
+                    else:
+                        utput_list_of_dicts[-1][br] = 0
             return output_list_of_dicts
             
         else:
@@ -58,9 +67,19 @@ class SentimentClassifier:
                             is_split_into_words=False,
                         )
                     with torch.no_grad():
-                        outs = self.model(batch.to(self.device)
-                    output_list_of_dicts[-1][br] = outs
+                        outs = self.model(batch.to(self.device))
+                    neg = self.predict_for_negative(tweet_dict['Text'])
+                    if neg==-1:
+                        output_list_of_dicts[-1][br] = outs
+                    else:
+                        utput_list_of_dicts[-1][br] = 0
             return output_list_of_dicts
+        
+    def predict_for_negative(self, text):
+        x = self.tfidf.transform(text)
+        x = self.regression(x)
+        if x>0.3: return 0
+        else: return -1
 
 if __name__ == "__main__":
     pass
