@@ -7,3 +7,5 @@ pip install syntok
 pip install transformers
 pip install sentencepiece
 pip install kaggle
+pip install gdown
+pip install dvc
