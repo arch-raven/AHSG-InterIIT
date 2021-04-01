@@ -8,4 +8,4 @@ pip install transformers
 pip install sentencepiece
 pip install kaggle
 pip install gdown
-pip install dvc
+pip install 'dvc[gdrive]'
