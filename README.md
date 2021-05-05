@@ -3,8 +3,9 @@
 This Repo Contains the code and presentation of IIT (BHU) Varanasi Team for the [event](bridgei2i-PS.pdf) BRIDGEi2i's Automatic Headline And Sentiment Generator at Inter IIT Tech Meet '21. Our Team secured a **Silver Medal** at the event.  
 
 ### Salient Features
-
-<img align="center" src="media/salient_features.png" style="background-color:White;width:500px;height:300px;" alt="salient features">
+<p align="center">
+<img width=600 height=360 style="background-color:White;" alt="salient features" src="media/salient_features.png">
+</p>
 
 We briefly explain the salient features of our approach here. In [#Approach](#approach), we explain each task in detail.  
 
@@ -36,12 +37,12 @@ We briefly explain the salient features of our approach here. In [#Approach](#ap
 
 ### Approach
 
-<img src="media/binary_classification.png" style="background-color:White;" alt="workflow">
-<img src="media/brand_identification.png" style="background-color:White;" alt="workflow">
-<img src="media/sentiment_analysis.png" style="background-color:White;" alt="workflow">
-<img src="media/headline_generation.png" style="background-color:White;" alt="workflow">
-<br>
-<br>
+<p align="center">
+<img width=900 height=500 src="media/binary_classification.png" style="background-color:White;" alt="workflow">
+<img width=900 height=500 src="media/brand_identification.png"  style="background-color:White;" alt="workflow">
+<img width=900 height=500 src="media/sentiment_analysis.png"    style="background-color:White;" alt="workflow">
+<img width=900 height=500 src="media/headline_generation.png"   style="background-color:White;" alt="workflow">
+</p>
 
 ### **Team**
 
